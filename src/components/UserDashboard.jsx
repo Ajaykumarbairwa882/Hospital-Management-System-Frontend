@@ -1,26 +1,19 @@
-function UserDashboard({ user, onLogout }) {
+import { useState } from "react";
+import Navbar from "./Navbar";
+import UserProfile from "./UserProfile";
+
+function UserDashboard({ user, onUserUpdate, onLogout }) {
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+
   return (
     <div className="userDashboard">
-      <nav className="navbar">
-        <div>
-          <h1>User Dashboard</h1>
-          <p>Welcome to Hospital Management System</p>
-        </div>
-
-        <div className="navRight">
-          <button className="logoutBtn" onClick={onLogout}>
-            Logout
-          </button>
-
-          <div className="profile">
-            <div className="avatar">{user.name?.slice(0, 2).toUpperCase() || "US"}</div>
-            <div>
-              <strong>{user.name}</strong>
-              <span>{user.email}</span>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar
+        title="User Dashboard"
+        subtitle="Welcome to Hospital Management System"
+        user={user}
+        onLogout={onLogout}
+        onOpenProfile={() => setShowProfilePopup(true)}
+      />
 
       <main className="userContent">
         <section className="locationArea">
@@ -28,6 +21,19 @@ function UserDashboard({ user, onLogout }) {
           <p className="mutedText">You are logged in as {user.role}.</p>
         </section>
       </main>
+
+      {showProfilePopup && (
+        <div className="popupBg">
+          <div className="popup profilePopup">
+            <UserProfile
+              user={user}
+              title="User Profile"
+              onUserUpdate={onUserUpdate}
+              onClose={() => setShowProfilePopup(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

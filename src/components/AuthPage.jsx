@@ -64,7 +64,7 @@ function AuthPage({ onLogin }) {
           </button>
         </div>
 
-        {message && <p className="errorText">{message}</p>}
+        {/* {message && <p className="errorText">{message}</p>} */}
 
         {screen === "login" ? (
           <Login loading={loading} onLogin={handleLogin} />

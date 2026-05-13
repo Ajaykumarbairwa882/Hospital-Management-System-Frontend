@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminDashborad from "./components/AdminDashborad";
-import AuthPage from "./components/AuthPage";
+import HospitalDashboard from "./components/HospitalDashboard";
+import HomePage from "./components/HomePage";
 import UserDashboard from "./components/UserDashboard";
 import "./App.css";
 
@@ -15,14 +16,18 @@ function App() {
   };
 
   if (!user) {
-    return <AuthPage onLogin={setUser} />;
+    return <HomePage onLogin={setUser} />;
   }
 
   if (user.role === "superadmin") {
     return <AdminDashborad user={user} onUserUpdate={setUser} onLogout={logout} />;
   }
 
-  return <UserDashboard user={user} onLogout={logout} />;
+  if (user.role === "hospital") {
+    return <HospitalDashboard user={user} onUserUpdate={setUser} onLogout={logout} />;
+  }
+
+  return <UserDashboard user={user} onUserUpdate={setUser} onLogout={logout} />;
 }
 
 export default App;

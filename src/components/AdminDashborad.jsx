@@ -16,15 +16,16 @@ import {
   updateState,
   updateStateStatus,
 } from "../api/locationApi";
-import AdminNavbar from "./AdminNavbar";
+import { getAllHospitals, getSingleHospital, updateHospitalStatus } from "../api/hospitalApi";
+import AdminHospitals from "./AdminHospitals";
 import AdminProfile from "./AdminProfile";
 import AdminSidebar from "./AdminSidebar";
 import LocationCards from "./LocationCards";
 import LocationPopup from "./LocationPopup";
 import LocationSummary from "./LocationSummary";
+import Navbar from "./Navbar";
 
 function AdminDashborad({ user, onUserUpdate, onLogout }) {
-  const [darkMode, setDarkMode] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [formType, setFormType] = useState("state");
   const [stateName, setStateName] = useState("");
@@ -37,9 +38,12 @@ function AdminDashborad({ user, onUserUpdate, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [editItem, setEditItem] = useState(null);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [activePage, setActivePage] = useState("locations");
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [cities, setCities] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
 
   const loadLocations = async () => {
     try {
@@ -61,15 +65,29 @@ function AdminDashborad({ user, onUserUpdate, onLogout }) {
     }
   };
 
+  const loadHospitals = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllHospitals();
+      setHospitals(data.hospitals || []);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       loadLocations();
+      loadHospitals();
     }, 0);
 
     return () => clearTimeout(timer);
   }, []);
 
   const openPopup = (type = "state") => {
+    setActivePage("locations");
     setFormType(type);
     setEditItem(null);
     setStateName("");
@@ -79,6 +97,30 @@ function AdminDashborad({ user, onUserUpdate, onLogout }) {
     setSelectedDistrict("");
     setMessage("");
     setShowPopup(true);
+  };
+
+  const showHospitals = () => {
+    setActivePage("hospitals");
+    setMessage("");
+    loadHospitals();
+  };
+
+  const getOneHospital = async (id) => {
+    try {
+      const data = await getSingleHospital(id);
+      setSelectedHospital(data.hospital);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  const changeHospitalStatus = async (id, status) => {
+    try {
+      await updateHospitalStatus(id, status);
+      await loadHospitals();
+    } catch (error) {
+      setMessage(error.message);
+    }
   };
 
   const openEditPopup = (type, item) => {
@@ -227,22 +269,30 @@ function AdminDashborad({ user, onUserUpdate, onLogout }) {
   };
 
   return (
-    <div className={darkMode ? "app dark" : "app"}>
-      <AdminNavbar
+    <div className="app">
+      <Navbar
+        title="Super Admin Dashboard"
+        subtitle="Hospital location setup"
         user={user}
-        darkMode={darkMode}
-        onToggleMode={() => setDarkMode(!darkMode)}
         onLogout={onLogout}
         onOpenProfile={() => setShowProfilePopup(true)}
       />
 
       <div className="dashboard">
-        <AdminSidebar onOpenPopup={openPopup} />
+        <AdminSidebar activePage={activePage} onOpenPopup={openPopup} onShowHospitals={showHospitals} />
 
         <main className="content">
           {message && !showPopup && <p className="pageMessage">{message}</p>}
           {loading ? (
-            <div className="emptyBox">Loading locations...</div>
+            <div className="emptyBox">Loading...</div>
+          ) : activePage === "hospitals" ? (
+            <AdminHospitals
+              hospitals={hospitals}
+              selectedHospital={selectedHospital}
+              onRefresh={loadHospitals}
+              onGetOne={getOneHospital}
+              onUpdateStatus={changeHospitalStatus}
+            />
           ) : (
             <>
               <LocationSummary states={states} districts={districts} cities={cities} />
