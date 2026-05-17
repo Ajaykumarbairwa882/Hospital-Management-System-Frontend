@@ -23,6 +23,14 @@ export const getAllHospitals = async () => {
     throw new Error(getErrorMessage(error), { cause: error });
   }
 };
+export const getAllHospitalImages = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/hospital/images/all`);
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error), { cause: error });
+  }
+};
 
 export const getSingleHospital = async (id) => {
   try {

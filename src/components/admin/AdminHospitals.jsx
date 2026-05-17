@@ -1,3 +1,19 @@
+import { useState } from "react";
+import DashboardControls from "../common/DashboardControls";
+import { getVisibleRecords } from "../../utils/dashboardList";
+
+const pageSize = 6;
+const sortOptions = [
+  { value: "name", label: "Name A-Z" },
+  { value: "nameDesc", label: "Name Z-A" },
+  { value: "status", label: "Status" },
+];
+const sortMap = {
+  name: { getValue: (item) => item.hospitalName, direction: 1 },
+  nameDesc: { getValue: (item) => item.hospitalName, direction: -1 },
+  status: { getValue: (item) => item.status, direction: 1 },
+};
+
 function AdminHospitals({
   hospitals,
   selectedHospital,
@@ -5,6 +21,10 @@ function AdminHospitals({
   onGetOne,
   onUpdateStatus,
 }) {
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("name");
+  const [visibleCount, setVisibleCount] = useState(pageSize);
+
   const getLocationName = (city) => {
     if (!city) {
       return "Location not added";
@@ -12,6 +32,23 @@ function AdminHospitals({
 
     return `${city.cityName}, ${city.district?.districtName}, ${city.district?.state?.stateName}, India`;
   };
+
+  const hospitalList = getVisibleRecords({
+    records: hospitals,
+    search,
+    fields: [
+      (item) => item.hospitalName,
+      (item) => item.name,
+      (item) => item.email,
+      (item) => item.phone,
+      (item) => item.address,
+      (item) => getLocationName(item.city),
+      (item) => item.status,
+    ],
+    sortBy,
+    sortMap,
+    visibleCount,
+  });
 
   return (
     <section className="locationArea">
@@ -31,11 +68,25 @@ function AdminHospitals({
         </div>
       )}
 
-      {hospitals.length === 0 ? (
+      <DashboardControls
+        search={search}
+        onSearch={(value) => {
+          setSearch(value);
+          setVisibleCount(pageSize);
+        }}
+        sortBy={sortBy}
+        onSortBy={setSortBy}
+        sortOptions={sortOptions}
+        visibleCount={visibleCount}
+        totalCount={hospitalList.totalCount}
+        onShowMore={() => setVisibleCount((oldCount) => oldCount + pageSize)}
+      />
+
+      {hospitalList.totalCount === 0 ? (
         <div className="emptyBox">No hospital request found.</div>
       ) : (
         <div className="adminHospitalGrid">
-          {hospitals.map((hospital) => (
+          {hospitalList.visibleRecords.map((hospital) => (
             <div className="adminHospitalCard" key={hospital._id}>
               <div className="adminHospitalInfo">
                 <div className="hospitalCardTop">

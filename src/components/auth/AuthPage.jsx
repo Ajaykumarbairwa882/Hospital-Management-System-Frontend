@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { loginUser, signupUser } from "../api/authApi";
+import { loginUser, signupUser } from "../../api/authApi";
 import Login from "./Login";
 import Signup from "./Signup";
 
@@ -64,7 +64,7 @@ function AuthPage({ onLogin }) {
           </button>
         </div>
 
-        {/* {message && <p className="errorText">{message}</p>} */}
+        {message && <p className="errorText">{message}</p>}
 
         {screen === "login" ? (
           <Login loading={loading} onLogin={handleLogin} />

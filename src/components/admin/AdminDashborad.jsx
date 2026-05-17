@@ -15,15 +15,15 @@ import {
   updateDistrictStatus,
   updateState,
   updateStateStatus,
-} from "../api/locationApi";
-import { getAllHospitals, getSingleHospital, updateHospitalStatus } from "../api/hospitalApi";
+} from "../../api/locationApi";
+import { getAllHospitals, getSingleHospital, updateHospitalStatus } from "../../api/hospitalApi";
 import AdminHospitals from "./AdminHospitals";
-import AdminProfile from "./AdminProfile";
 import AdminSidebar from "./AdminSidebar";
-import LocationCards from "./LocationCards";
-import LocationPopup from "./LocationPopup";
-import LocationSummary from "./LocationSummary";
-import Navbar from "./Navbar";
+import LocationCards from "../location/LocationCards";
+import LocationPopup from "../location/LocationPopup";
+import LocationSummary from "../location/LocationSummary";
+import Navbar from "../common/Navbar";
+import UserProfile from "../profile/UserProfile";
 
 function AdminDashborad({ user, onUserUpdate, onLogout }) {
   const [showPopup, setShowPopup] = useState(false);
@@ -339,8 +339,9 @@ function AdminDashborad({ user, onUserUpdate, onLogout }) {
       {showProfilePopup && (
         <div className="popupBg">
           <div className="popup profilePopup">
-            <AdminProfile
+            <UserProfile
               user={user}
+              title="Super Admin Profile"
               onUserUpdate={onUserUpdate}
               onClose={() => setShowProfilePopup(false)}
             />

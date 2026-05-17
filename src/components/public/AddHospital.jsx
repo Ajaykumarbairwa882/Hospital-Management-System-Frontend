@@ -1,5 +1,17 @@
 import { useState } from "react";
 
+const emptyImage = { name: "", image: "" };
+
+const fileToDataUrl = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Unable to read image"));
+    reader.readAsDataURL(file);
+  });
+};
+
 function AddHospital({ states = [], districts = [], cities = [], loading, onSubmit }) {
   const [formData, setFormData] = useState({
     hospitalName: "",
@@ -11,6 +23,7 @@ function AddHospital({ states = [], districts = [], cities = [], loading, onSubm
     district: "",
     city: "",
   });
+  const [images, setImages] = useState([{ ...emptyImage }]);
 
   const activeStates = states.filter((state) => state.status === "active");
   const activeDistricts = districts.filter((district) => {
@@ -42,6 +55,36 @@ function AddHospital({ states = [], districts = [], cities = [], loading, onSubm
     });
   };
 
+  const updateImageField = (index, field, value) => {
+    setImages((oldImages) =>
+      oldImages.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item,
+      ),
+    );
+  };
+
+  const updateImageFile = async (index, file) => {
+    if (!file) {
+      updateImageField(index, "image", "");
+      return;
+    }
+
+    const image = await fileToDataUrl(file);
+    updateImageField(index, "image", image);
+  };
+
+  const addImageRow = () => {
+    setImages((oldImages) => [...oldImages, { ...emptyImage }]);
+  };
+
+  const removeImageRow = (index) => {
+    setImages((oldImages) =>
+      oldImages.length === 1
+        ? [{ ...emptyImage }]
+        : oldImages.filter((_, itemIndex) => itemIndex !== index),
+    );
+  };
+
   const submitForm = (event) => {
     event.preventDefault();
     const hospitalData = {
@@ -51,6 +94,7 @@ function AddHospital({ states = [], districts = [], cities = [], loading, onSubm
       phone: formData.phone,
       address: formData.address,
       city: formData.city,
+      images: images.filter((item) => item.name.trim() && item.image),
     };
 
     onSubmit(hospitalData);
@@ -140,6 +184,35 @@ function AddHospital({ states = [], districts = [], cities = [], loading, onSubm
           </option>
         ))}
       </select>
+
+      <div className="imageFields">
+        <div className="imageFieldsHead">
+          <label>Images</label>
+          <button type="button" onClick={addImageRow}>
+            +
+          </button>
+        </div>
+
+        {images.map((item, index) => (
+          <div className="imageRow" key={index}>
+            <input
+              value={item.name}
+              onChange={(event) =>
+                updateImageField(index, "name", event.target.value)
+              }
+              placeholder="Image name"
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => updateImageFile(index, event.target.files[0])}
+            />
+            <button type="button" onClick={() => removeImageRow(index)}>
+              -
+            </button>
+          </div>
+        ))}
+      </div>
 
       <button className="authBtn" disabled={loading}>
         {loading ? "Please wait..." : "Add Hospital"}

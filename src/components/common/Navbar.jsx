@@ -1,4 +1,5 @@
-import useTheme from "../hooks/useTheme";
+import useTheme from "../../hooks/useTheme";
+import "../../styles/Navbar.css";
 
 function Navbar({
   title,
@@ -54,7 +55,13 @@ function Navbar({
             onClick={onOpenProfile}
             type="button"
           >
-            <div className="avatar">{initials}</div>
+            <div className="avatar">
+              {user.profileImage ? (
+                <img src={user.profileImage} alt={user.name || "User"} />
+              ) : (
+                initials
+              )}
+            </div>
             <div>
               <strong>{user.name || "User"}</strong>
               <span>{user.email || "user@hms.com"}</span>

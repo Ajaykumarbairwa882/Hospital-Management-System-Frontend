@@ -61,3 +61,17 @@ export const deleteUser = async (id) => {
     throw new Error(getErrorMessage(error), { cause: error });
   }
 };
+export const resetPassword = async (passwordData) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/user/reset-password`,
+      passwordData
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error), {
+      cause: error,
+    });
+  }
+};

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   addDepartment,
   getHospitalDepartments,
@@ -7,7 +7,7 @@ import {
   softDeleteDepartment,
   updateDepartment,
   restoreDepartment,
-} from "../api/departmentApi";
+} from "../../api/departmentApi";
 import {
   addDoctor,
   getHospitalDoctors,
@@ -15,7 +15,7 @@ import {
   hardDeleteDoctor,
   softDeleteDoctor,
   updateDoctor,
-} from "../api/doctorApi";
+} from "../../api/doctorApi";
 import {
   addSubDepartment,
   getHospitalSubDepartments,
@@ -23,10 +23,13 @@ import {
   hardDeleteSubDepartment,
   softDeleteSubDepartment,
   updateSubDepartment,
-} from "../api/subDepartmentApi";
+  restoreSubDepartment,
+} from "../../api/subDepartmentApi";
+import DashboardControls from "../common/DashboardControls";
 import HospitalSidebar from "./HospitalSidebar";
-import Navbar from "./Navbar";
-import UserProfile from "./UserProfile";
+import Navbar from "../common/Navbar";
+import UserProfile from "../profile/UserProfile";
+import { getVisibleRecords } from "../../utils/dashboardList";
 
 const emptyDepartment = {
   departmentName: "",
@@ -43,6 +46,7 @@ const emptyDoctor = {
   department: "",
   subDepartment: "",
   status: "active",
+  images: [{ name: "", image: "" }],
 };
 
 const emptySubDepartment = {
@@ -50,6 +54,30 @@ const emptySubDepartment = {
   description: "",
   department: "",
   status: "active",
+};
+
+const emptyImage = { name: "", image: "" };
+const pageSize = 6;
+const recordSortOptions = [
+  { value: "name", label: "Name A-Z" },
+  { value: "nameDesc", label: "Name Z-A" },
+  { value: "status", label: "Status" },
+];
+
+const makeSortMap = (nameField) => ({
+  name: { getValue: (item) => item[nameField], direction: 1 },
+  nameDesc: { getValue: (item) => item[nameField], direction: -1 },
+  status: { getValue: (item) => item.status, direction: 1 },
+});
+
+const fileToDataUrl = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Unable to read image"));
+    reader.readAsDataURL(file);
+  });
 };
 
 function HospitalDashboard({ user, onUserUpdate, onLogout }) {
@@ -68,8 +96,17 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [departmentSearch, setDepartmentSearch] = useState("");
+  const [departmentSort, setDepartmentSort] = useState("name");
+  const [departmentVisible, setDepartmentVisible] = useState(pageSize);
+  const [subDepartmentSearch, setSubDepartmentSearch] = useState("");
+  const [subDepartmentSort, setSubDepartmentSort] = useState("name");
+  const [subDepartmentVisible, setSubDepartmentVisible] = useState(pageSize);
+  const [doctorSearch, setDoctorSearch] = useState("");
+  const [doctorSort, setDoctorSort] = useState("name");
+  const [doctorVisible, setDoctorVisible] = useState(pageSize);
 
-  const loadDepartments = async () => {
+  const loadDepartments = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getHospitalDepartments(user._id);
@@ -79,9 +116,9 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user._id]);
 
-  const loadDoctors = async () => {
+  const loadDoctors = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getHospitalDoctors(user._id);
@@ -91,9 +128,9 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user._id]);
 
-  const loadSubDepartments = async () => {
+  const loadSubDepartments = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getHospitalSubDepartments(user._id);
@@ -103,18 +140,67 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user._id]);
 
   useEffect(() => {
-    loadDepartments();
-    loadSubDepartments();
-    loadDoctors();
-  }, []);
+    const timer = setTimeout(() => {
+      loadDepartments();
+      loadSubDepartments();
+      loadDoctors();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadDepartments, loadDoctors, loadSubDepartments]);
+
+  const departmentList = getVisibleRecords({
+    records: departments,
+    search: departmentSearch,
+    fields: [
+      (item) => item.departmentName,
+      (item) => item.description,
+      (item) => item.status,
+    ],
+    sortBy: departmentSort,
+    sortMap: makeSortMap("departmentName"),
+    visibleCount: departmentVisible,
+  });
+
+  const subDepartmentList = getVisibleRecords({
+    records: subDepartments,
+    search: subDepartmentSearch,
+    fields: [
+      (item) => item.subDepartmentName,
+      (item) => item.department?.departmentName,
+      (item) => item.description,
+      (item) => item.status,
+    ],
+    sortBy: subDepartmentSort,
+    sortMap: makeSortMap("subDepartmentName"),
+    visibleCount: subDepartmentVisible,
+  });
+
+  const doctorList = getVisibleRecords({
+    records: doctors,
+    search: doctorSearch,
+    fields: [
+      (item) => item.doctorName,
+      (item) => item.email,
+      (item) => item.phone,
+      (item) => item.specialization,
+      (item) => item.department?.departmentName,
+      (item) => item.subDepartment?.subDepartmentName,
+      (item) => item.status,
+    ],
+    sortBy: doctorSort,
+    sortMap: makeSortMap("doctorName"),
+    visibleCount: doctorVisible,
+  });
 
   const openDepartmentPanel = async () => {
     setActivePage("departments");
     setDetailPopup(null);
     setMessage("");
+    setDepartmentVisible(pageSize);
     await loadDepartments();
   };
 
@@ -122,6 +208,7 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
     setActivePage("subDepartments");
     setDetailPopup(null);
     setMessage("");
+    setSubDepartmentVisible(pageSize);
     await loadSubDepartments();
   };
 
@@ -129,6 +216,7 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
     setActivePage("doctors");
     setDetailPopup(null);
     setMessage("");
+    setDoctorVisible(pageSize);
     await loadDoctors();
   };
 
@@ -178,6 +266,7 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
       department: doctor.department?._id || "",
       subDepartment: doctor.subDepartment?._id || "",
       status: doctor.status || "active",
+      images: [{ ...emptyImage }],
     });
   };
 
@@ -199,6 +288,42 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
     setSubDepartmentForm(emptySubDepartment);
     setDoctorForm(emptyDoctor);
     setMessage("");
+  };
+
+  const updateDoctorImageField = (index, field, value) => {
+    setDoctorForm((oldForm) => ({
+      ...oldForm,
+      images: oldForm.images.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item,
+      ),
+    }));
+  };
+
+  const updateDoctorImageFile = async (index, file) => {
+    if (!file) {
+      updateDoctorImageField(index, "image", "");
+      return;
+    }
+
+    const image = await fileToDataUrl(file);
+    updateDoctorImageField(index, "image", image);
+  };
+
+  const addDoctorImageRow = () => {
+    setDoctorForm((oldForm) => ({
+      ...oldForm,
+      images: [...oldForm.images, { ...emptyImage }],
+    }));
+  };
+
+  const removeDoctorImageRow = (index) => {
+    setDoctorForm((oldForm) => ({
+      ...oldForm,
+      images:
+        oldForm.images.length === 1
+          ? [{ ...emptyImage }]
+          : oldForm.images.filter((_, itemIndex) => itemIndex !== index),
+    }));
   };
 
   const saveDepartment = async () => {
@@ -287,6 +412,9 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
         qualification: doctorForm.qualification.trim(),
         specialization: doctorForm.specialization.trim(),
         hospitalUser: user._id,
+        images: doctorForm.images.filter(
+          (item) => item.name.trim() && item.image,
+        ),
       };
 
       if (editId) {
@@ -419,13 +547,29 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
           </div>
         </div>
 
+        <DashboardControls
+          search={departmentSearch}
+          onSearch={(value) => {
+            setDepartmentSearch(value);
+            setDepartmentVisible(pageSize);
+          }}
+          sortBy={departmentSort}
+          onSortBy={setDepartmentSort}
+          sortOptions={recordSortOptions}
+          visibleCount={departmentVisible}
+          totalCount={departmentList.totalCount}
+          onShowMore={() =>
+            setDepartmentVisible((oldCount) => oldCount + pageSize)
+          }
+        />
+
         {loading ? (
           <div className="emptyBox">Loading...</div>
-        ) : departments.length === 0 ? (
+        ) : departmentList.totalCount === 0 ? (
           <div className="emptyBox">No department added yet.</div>
         ) : (
           <div className="recordGrid">
-            {departments.map((department) => (
+            {departmentList.visibleRecords.map((department) => (
               <div
                 className={`recordCard ${
                   department.isDeleted ? "deletedCard" : ""
@@ -508,14 +652,30 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
           </div>
         </div>
 
+        <DashboardControls
+          search={subDepartmentSearch}
+          onSearch={(value) => {
+            setSubDepartmentSearch(value);
+            setSubDepartmentVisible(pageSize);
+          }}
+          sortBy={subDepartmentSort}
+          onSortBy={setSubDepartmentSort}
+          sortOptions={recordSortOptions}
+          visibleCount={subDepartmentVisible}
+          totalCount={subDepartmentList.totalCount}
+          onShowMore={() =>
+            setSubDepartmentVisible((oldCount) => oldCount + pageSize)
+          }
+        />
+
         {loading ? (
           <div className="emptyBox">Loading...</div>
-        ) : subDepartments.length === 0 ? (
+        ) : subDepartmentList.totalCount === 0 ? (
           <div className="emptyBox">No sub department added yet.</div>
         ) : (
 
           <div className="recordGrid">
-            {subDepartments.map((subDepartment) => (
+            {subDepartmentList.visibleRecords.map((subDepartment) => (
               <div
                 className={`recordCard ${
                   subDepartment.isDeleted ? "deletedCard" : ""
@@ -610,13 +770,27 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
           </div>
         </div>
 
+        <DashboardControls
+          search={doctorSearch}
+          onSearch={(value) => {
+            setDoctorSearch(value);
+            setDoctorVisible(pageSize);
+          }}
+          sortBy={doctorSort}
+          onSortBy={setDoctorSort}
+          sortOptions={recordSortOptions}
+          visibleCount={doctorVisible}
+          totalCount={doctorList.totalCount}
+          onShowMore={() => setDoctorVisible((oldCount) => oldCount + pageSize)}
+        />
+
         {loading ? (
           <div className="emptyBox">Loading...</div>
-        ) : doctors.length === 0 ? (
+        ) : doctorList.totalCount === 0 ? (
           <div className="emptyBox">No doctor added yet.</div>
         ) : (
           <div className="recordGrid">
-            {doctors.map((doctor) => (
+            {doctorList.visibleRecords.map((doctor) => (
               <div className="recordCard" key={doctor._id}>
                 <div className="recordTop">
                   <span>{doctor.status}</span>
@@ -973,6 +1147,44 @@ function HospitalDashboard({ user, onUserUpdate, onLogout }) {
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
+                </div>
+
+                <div className="imageFields formWide">
+                  <div className="imageFieldsHead">
+                    <label>Images</label>
+                    <button type="button" onClick={addDoctorImageRow}>
+                      +
+                    </button>
+                  </div>
+
+                  {doctorForm.images.map((item, index) => (
+                    <div className="imageRow" key={index}>
+                      <input
+                        value={item.name}
+                        onChange={(event) =>
+                          updateDoctorImageField(
+                            index,
+                            "name",
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Image name"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) =>
+                          updateDoctorImageFile(index, event.target.files[0])
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeDoctorImageRow(index)}
+                      >
+                        -
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

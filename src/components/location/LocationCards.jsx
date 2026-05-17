@@ -1,3 +1,19 @@
+import { useState } from "react";
+import DashboardControls from "../common/DashboardControls";
+import { getVisibleRecords } from "../../utils/dashboardList";
+
+const pageSize = 5;
+const sortOptions = [
+  { value: "name", label: "Name A-Z" },
+  { value: "nameDesc", label: "Name Z-A" },
+  { value: "status", label: "Status" },
+];
+const getSortMap = (nameField) => ({
+  name: { getValue: (item) => item[nameField], direction: 1 },
+  nameDesc: { getValue: (item) => item[nameField], direction: -1 },
+  status: { getValue: (item) => item.status, direction: 1 },
+});
+
 function LocationCards({
   states,
   districts,
@@ -8,6 +24,15 @@ function LocationCards({
   onToggleStatus,
   onRefresh,
 }) {
+  const [stateSearch, setStateSearch] = useState("");
+  const [stateSort, setStateSort] = useState("name");
+  const [stateVisible, setStateVisible] = useState(pageSize);
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [districtSort, setDistrictSort] = useState("name");
+  const [districtVisible, setDistrictVisible] = useState(pageSize);
+  const [citySearch, setCitySearch] = useState("");
+  const [citySort, setCitySort] = useState("name");
+  const [cityVisible, setCityVisible] = useState(pageSize);
   const hasLocation = states.length > 0 || districts.length > 0 || cities.length > 0;
 
   const getStateName = (district) => {
@@ -55,6 +80,36 @@ function LocationCards({
     </div>
   );
 
+  const stateList = getVisibleRecords({
+    records: states,
+    search: stateSearch,
+    fields: [(item) => item.stateName, (item) => item.country, (item) => item.status],
+    sortBy: stateSort,
+    sortMap: getSortMap("stateName"),
+    visibleCount: stateVisible,
+  });
+  const districtList = getVisibleRecords({
+    records: districts,
+    search: districtSearch,
+    fields: [(item) => item.districtName, getStateName, (item) => item.status],
+    sortBy: districtSort,
+    sortMap: getSortMap("districtName"),
+    visibleCount: districtVisible,
+  });
+  const cityList = getVisibleRecords({
+    records: cities,
+    search: citySearch,
+    fields: [
+      (item) => item.cityName,
+      getCityDistrictName,
+      getCityStateName,
+      (item) => item.status,
+    ],
+    sortBy: citySort,
+    sortMap: getSortMap("cityName"),
+    visibleCount: cityVisible,
+  });
+
   return (
     <section className="locationArea">
       <div className="sectionTitle">
@@ -74,10 +129,23 @@ function LocationCards({
               <h3>States</h3>
               <button onClick={() => onOpenPopup("state")}>Add State</button>
             </div>
-            {states.length === 0 ? (
+            <DashboardControls
+              search={stateSearch}
+              onSearch={(value) => {
+                setStateSearch(value);
+                setStateVisible(pageSize);
+              }}
+              sortBy={stateSort}
+              onSortBy={setStateSort}
+              sortOptions={sortOptions}
+              visibleCount={stateVisible}
+              totalCount={stateList.totalCount}
+              onShowMore={() => setStateVisible((oldCount) => oldCount + pageSize)}
+            />
+            {stateList.totalCount === 0 ? (
               <p className="mutedText">No states added</p>
             ) : (
-              states.map((state) => (
+              stateList.visibleRecords.map((state) => (
                 <div className="locationRow" key={state._id}>
                   <div>
                     <span>State</span>
@@ -101,10 +169,25 @@ function LocationCards({
               <h3>Districts</h3>
               <button onClick={() => onOpenPopup("district")}>Add District</button>
             </div>
-            {districts.length === 0 ? (
+            <DashboardControls
+              search={districtSearch}
+              onSearch={(value) => {
+                setDistrictSearch(value);
+                setDistrictVisible(pageSize);
+              }}
+              sortBy={districtSort}
+              onSortBy={setDistrictSort}
+              sortOptions={sortOptions}
+              visibleCount={districtVisible}
+              totalCount={districtList.totalCount}
+              onShowMore={() =>
+                setDistrictVisible((oldCount) => oldCount + pageSize)
+              }
+            />
+            {districtList.totalCount === 0 ? (
               <p className="mutedText">No districts added</p>
             ) : (
-              districts.map((district) => (
+              districtList.visibleRecords.map((district) => (
                 <div className="locationRow" key={district._id}>
                   <div>
                     <span>District</span>
@@ -128,10 +211,23 @@ function LocationCards({
               <h3>Cities</h3>
               <button onClick={() => onOpenPopup("city")}>Add City</button>
             </div>
-            {cities.length === 0 ? (
+            <DashboardControls
+              search={citySearch}
+              onSearch={(value) => {
+                setCitySearch(value);
+                setCityVisible(pageSize);
+              }}
+              sortBy={citySort}
+              onSortBy={setCitySort}
+              sortOptions={sortOptions}
+              visibleCount={cityVisible}
+              totalCount={cityList.totalCount}
+              onShowMore={() => setCityVisible((oldCount) => oldCount + pageSize)}
+            />
+            {cityList.totalCount === 0 ? (
               <p className="mutedText">No cities added</p>
             ) : (
-              cities.map((city) => (
+              cityList.visibleRecords.map((city) => (
                 <div className="locationRow" key={city._id}>
                   <div>
                     <span>City</span>

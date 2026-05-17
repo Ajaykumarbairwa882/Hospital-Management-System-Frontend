@@ -22,7 +22,7 @@ export const addSubDepartment = async (subDepartmentData) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -36,7 +36,7 @@ export const getHospitalSubDepartments = async (userId) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -50,7 +50,7 @@ export const getAllSubDepartments = async () => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -64,7 +64,7 @@ export const getSingleSubDepartment = async (id) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -82,7 +82,7 @@ export const updateSubDepartment = async (
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -96,7 +96,7 @@ export const softDeleteSubDepartment = async (id) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -110,7 +110,7 @@ export const restoreSubDepartment = async (id) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };
 
@@ -124,6 +124,6 @@ export const hardDeleteSubDepartment = async (id) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 };

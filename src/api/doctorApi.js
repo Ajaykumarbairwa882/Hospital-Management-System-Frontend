@@ -15,13 +15,11 @@ export const addDoctor = async (doctorData) => {
   }
 };
 
-export const getHospitalDoctors = async (userId) => {
-  try {
-    const response = await axios.get(`${API_URL}/doctor/hospital/${userId}`);
-    return response.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error), { cause: error });
-  }
+export const getHospitalDoctors = async (hospitalId) => {
+  const response = await axios.get(
+    `${API_URL}/doctor/all?hospital=${hospitalId}`
+  );
+  return response.data;
 };
 
 export const getAllDoctors = async () => {

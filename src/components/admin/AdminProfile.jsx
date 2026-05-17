@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAdmins, updateAdminInfo } from "../api/adminApi";
+import { getAdmins, updateAdminInfo } from "../../api/adminApi";
 
 function AdminProfile({ user, onUserUpdate, onClose }) {
   const [adminId, setAdminId] = useState(user?.superAdmin || "");
